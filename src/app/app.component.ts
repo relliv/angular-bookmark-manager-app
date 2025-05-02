@@ -11,6 +11,8 @@ import { BookmarkService } from './features/bookmarks/services/bookmark.service'
 import { ViewModeService } from './core/services/view-mode.service';
 import { SearchBarComponent } from './core/components/search-bar/search-bar.component';
 import { AddBookmarkDialogComponent } from './features/bookmarks/components/add-bookmark-dialog/add-bookmark-dialog.component';
+import { EditBookmarkDialogComponent } from './features/bookmarks/components/edit-bookmark-dialog/edit-bookmark-dialog.component';
+import { Bookmark } from './features/bookmarks/models/bookmark.model';
 
 @Component({
   selector: 'app-root',
@@ -24,7 +26,8 @@ import { AddBookmarkDialogComponent } from './features/bookmarks/components/add-
     BookmarkGridComponent,
     BookmarksExplorerComponent,
     SearchBarComponent,
-    AddBookmarkDialogComponent
+    AddBookmarkDialogComponent,
+    EditBookmarkDialogComponent
   ],
   providers: [ThemeService, ViewModeService, BookmarkService],
   template: `
@@ -42,17 +45,28 @@ import { AddBookmarkDialogComponent } from './features/bookmarks/components/add-
                             (close)="showAddBookmarkDialog = false"
                             (save)="handleSaveBookmark($event)">
     </app-add-bookmark-dialog>
+
+    <app-edit-bookmark-dialog *ngIf="bookmarkToEdit"
+                             [bookmark]="bookmarkToEdit"
+                             (close)="bookmarkToEdit = null"
+                             (save)="handleEditBookmark($event)">
+    </app-edit-bookmark-dialog>
   `
 })
 export class AppComponent implements OnInit {
   @HostBinding('class.dark') isDarkMode = false;
   
   showAddBookmarkDialog = false;
+  bookmarkToEdit: Bookmark | null = null;
 
   constructor(
     private themeService: ThemeService,
     private bookmarkService: BookmarkService
-  ) {}
+  ) {
+    this.bookmarkService.bookmarkToEdit$.subscribe(bookmark => {
+      this.bookmarkToEdit = bookmark;
+    });
+  }
 
   ngOnInit(): void {
     this.themeService.isDarkMode$.subscribe(isDark => {
@@ -70,5 +84,19 @@ export class AppComponent implements OnInit {
       isFavorite: data.isFavorite
     });
     this.showAddBookmarkDialog = false;
+  }
+
+  handleEditBookmark(data: any): void {
+    if (this.bookmarkToEdit) {
+      this.bookmarkService.updateBookmark(this.bookmarkToEdit.id, {
+        url: data.url,
+        title: data.title,
+        description: data.description,
+        folderId: data.folderId || undefined,
+        tags: data.tags,
+        isFavorite: data.isFavorite
+      });
+      this.bookmarkToEdit = null;
+    }
   }
 }

@@ -9,7 +9,10 @@ import { v4 as uuidv4 } from 'uuid';
 export class BookmarkService {
   private STORAGE_KEY = 'bookmarks';
   private bookmarksSubject = new BehaviorSubject<Bookmark[]>([]);
+  private bookmarkToEditSubject = new BehaviorSubject<Bookmark | null>(null);
+  
   bookmarks$ = this.bookmarksSubject.asObservable();
+  bookmarkToEdit$ = this.bookmarkToEditSubject.asObservable();
   
   constructor() {
     this.loadBookmarks();
@@ -136,6 +139,10 @@ export class BookmarkService {
     if (bookmark) {
       this.updateBookmark(id, { isFavorite: !bookmark.isFavorite });
     }
+  }
+
+  editBookmark(bookmark: Bookmark): void {
+    this.bookmarkToEditSubject.next(bookmark);
   }
   
   // Generate sample bookmarks for demo purposes
