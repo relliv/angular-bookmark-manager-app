@@ -5,11 +5,12 @@ import { FolderService } from '../../../features/bookmarks/services/folder.servi
 import { Folder } from '../../../features/bookmarks/models/folder.model';
 import { TagService } from '../../../features/bookmarks/services/tag.service';
 import { Tag } from '../../../features/bookmarks/models/tag.model';
+import { CreateFolderDialogComponent } from '../../../features/bookmarks/components/create-folder-dialog/create-folder-dialog.component';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, CreateFolderDialogComponent],
   template: `
     <aside class="w-64 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 overflow-y-auto">
       <div class="p-4">
@@ -43,7 +44,8 @@ import { Tag } from '../../../features/bookmarks/models/tag.model';
         <div class="mt-8">
           <div class="flex items-center justify-between px-3 mb-2">
             <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Folders</h2>
-            <button class="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300">
+            <button class="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                    (click)="showCreateFolderDialog = true">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
               </svg>
@@ -86,11 +88,17 @@ import { Tag } from '../../../features/bookmarks/models/tag.model';
         </div>
       </div>
     </aside>
+
+    <app-create-folder-dialog *ngIf="showCreateFolderDialog"
+                             (close)="showCreateFolderDialog = false"
+                             (save)="handleCreateFolder($event)">
+    </app-create-folder-dialog>
   `
 })
 export class SidebarComponent implements OnInit {
   folders: Folder[] = [];
   tags: Tag[] = [];
+  showCreateFolderDialog = false;
   
   constructor(
     private folderService: FolderService,
@@ -116,5 +124,13 @@ export class SidebarComponent implements OnInit {
     this.tagService.getTags().subscribe(tags => {
       this.tags = tags;
     });
+  }
+
+  handleCreateFolder(data: any): void {
+    this.folderService.addFolder({
+      name: data.name,
+      parentId: data.parentId
+    });
+    this.showCreateFolderDialog = false;
   }
 }
