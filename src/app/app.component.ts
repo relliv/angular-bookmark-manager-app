@@ -10,6 +10,7 @@ import { BookmarksExplorerComponent } from './features/bookmarks/components/book
 import { BookmarkService } from './features/bookmarks/services/bookmark.service';
 import { ViewModeService } from './core/services/view-mode.service';
 import { SearchBarComponent } from './core/components/search-bar/search-bar.component';
+import { AddBookmarkDialogComponent } from './features/bookmarks/components/add-bookmark-dialog/add-bookmark-dialog.component';
 
 @Component({
   selector: 'app-root',
@@ -22,12 +23,13 @@ import { SearchBarComponent } from './core/components/search-bar/search-bar.comp
     BookmarkListComponent,
     BookmarkGridComponent,
     BookmarksExplorerComponent,
-    SearchBarComponent
+    SearchBarComponent,
+    AddBookmarkDialogComponent
   ],
   providers: [ThemeService, ViewModeService, BookmarkService],
   template: `
     <div class="h-screen flex flex-col bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-50">
-      <app-header></app-header>
+      <app-header (addBookmark)="showAddBookmarkDialog = true"></app-header>
       <div class="flex flex-1 overflow-hidden">
         <app-sidebar></app-sidebar>
         <main class="flex-1 overflow-auto p-4">
@@ -66,6 +68,11 @@ import { SearchBarComponent } from './core/components/search-bar/search-bar.comp
         </main>
       </div>
     </div>
+
+    <app-add-bookmark-dialog *ngIf="showAddBookmarkDialog"
+                            (close)="showAddBookmarkDialog = false"
+                            (save)="handleSaveBookmark($event)">
+    </app-add-bookmark-dialog>
   `
 })
 export class AppComponent implements OnInit {
@@ -73,10 +80,12 @@ export class AppComponent implements OnInit {
   
   currentViewMode = 'list';
   currentViewTitle = 'All Bookmarks';
+  showAddBookmarkDialog = false;
 
   constructor(
     private themeService: ThemeService,
-    private viewModeService: ViewModeService
+    private viewModeService: ViewModeService,
+    private bookmarkService: BookmarkService
   ) {}
 
   ngOnInit(): void {
@@ -91,5 +100,17 @@ export class AppComponent implements OnInit {
 
   setViewMode(mode: string): void {
     this.viewModeService.setViewMode(mode);
+  }
+
+  handleSaveBookmark(data: any): void {
+    this.bookmarkService.addBookmark({
+      url: data.url,
+      title: data.title,
+      description: data.description,
+      folderId: data.folderId || undefined,
+      tags: data.tags,
+      isFavorite: data.isFavorite
+    });
+    this.showAddBookmarkDialog = false;
   }
 }

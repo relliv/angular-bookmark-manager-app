@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ThemeService } from '../../services/theme.service';
 
@@ -42,6 +42,8 @@ import { ThemeService } from '../../services/theme.service';
   `
 })
 export class HeaderComponent {
+  @Output() addBookmark = new EventEmitter<void>();
+  
   isDarkMode = false;
   
   constructor(private themeService: ThemeService) {
@@ -55,7 +57,6 @@ export class HeaderComponent {
   }
   
   openAddBookmarkDialog(): void {
-    // This will be implemented to show bookmark creation dialog
-    console.log('Open add bookmark dialog');
+    this.addBookmark.emit();
   }
 }
