@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { FolderService } from '../../../features/bookmarks/services/folder.service';
 import { Folder } from '../../../features/bookmarks/models/folder.model';
 import { TagService } from '../../../features/bookmarks/services/tag.service';
@@ -75,11 +75,13 @@ import { Tag } from '../../../features/bookmarks/models/tag.model';
           </div>
           
           <div class="space-y-1">
-            <div *ngFor="let tag of tags" 
-                 class="flex items-center px-3 py-2 text-sm rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer">
+            <a *ngFor="let tag of tags" 
+               [routerLink]="['/tag', tag.id]"
+               routerLinkActive="bg-neutral-100 dark:bg-neutral-800"
+               class="flex items-center px-3 py-2 text-sm rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer">
               <span class="w-3 h-3 rounded-full mr-3" [style.backgroundColor]="tag.color"></span>
               {{ tag.name }}
-            </div>
+            </a>
           </div>
         </div>
       </div>
@@ -92,8 +94,19 @@ export class SidebarComponent implements OnInit {
   
   constructor(
     private folderService: FolderService,
-    private tagService: TagService
-  ) {}
+    private tagService: TagService,
+    private router: Router
+  ) {
+    this.router.events.subscribe(event => {
+      if (event instanceof NavigationEnd) {
+        // Scroll sidebar to top on navigation
+        const sidebarElement = document.querySelector('aside');
+        if (sidebarElement) {
+          sidebarElement.scrollTop = 0;
+        }
+      }
+    });
+  }
   
   ngOnInit(): void {
     this.folderService.getFolders().subscribe(folders => {

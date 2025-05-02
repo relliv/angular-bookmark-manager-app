@@ -8,7 +8,15 @@ export const APP_ROUTES: Routes = [
   },
   {
     path: 'bookmarks',
-    loadComponent: () => import('./features/bookmarks/pages/bookmarks-page/bookmarks-page.component').then(m => m.BookmarksPageComponent)
+    loadComponent: () => import('./features/bookmarks/pages/all-bookmarks-page/all-bookmarks-page.component').then(m => m.AllBookmarksPageComponent)
+  },
+  {
+    path: 'favorites',
+    loadComponent: () => import('./features/bookmarks/pages/favorites-page/favorites-page.component').then(m => m.FavoritesPageComponent)
+  },
+  {
+    path: 'recent',
+    loadComponent: () => import('./features/bookmarks/pages/recent-page/recent-page.component').then(m => m.RecentPageComponent)
   },
   {
     path: 'folder/:id',
