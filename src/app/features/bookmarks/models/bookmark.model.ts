@@ -8,6 +8,7 @@ export interface Bookmark {
   faviconUrl?: string;
   screenshotUrl?: string;
   folderId?: string;
+  groupId?: string;
   tags?: Tag[];
   isFavorite: boolean;
   createdAt: Date;

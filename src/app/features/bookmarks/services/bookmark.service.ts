@@ -3,19 +3,118 @@ import { BehaviorSubject, Observable, of } from 'rxjs';
 import { Bookmark } from '../models/bookmark.model';
 import { v4 as uuidv4 } from 'uuid';
 
+interface BookmarkGroup {
+  id: string;
+  name: string;
+  bookmarks: string[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class BookmarkService {
   private STORAGE_KEY = 'bookmarks';
+  private GROUPS_KEY = 'bookmarkGroups';
   private bookmarksSubject = new BehaviorSubject<Bookmark[]>([]);
   private bookmarkToEditSubject = new BehaviorSubject<Bookmark | null>(null);
+  private groupsSubject = new BehaviorSubject<BookmarkGroup[]>([]);
   
   bookmarks$ = this.bookmarksSubject.asObservable();
   bookmarkToEdit$ = this.bookmarkToEditSubject.asObservable();
+  groups$ = this.groupsSubject.asObservable();
   
   constructor() {
     this.loadBookmarks();
+    this.loadGroups();
+  }
+
+  private loadGroups(): void {
+    try {
+      const storedGroups = localStorage.getItem(this.GROUPS_KEY);
+      if (storedGroups) {
+        this.groupsSubject.next(JSON.parse(storedGroups));
+      }
+    } catch (error) {
+      console.error('Error loading groups', error);
+      this.groupsSubject.next([]);
+    }
+  }
+
+  private saveGroups(groups: BookmarkGroup[]): void {
+    try {
+      localStorage.setItem(this.GROUPS_KEY, JSON.stringify(groups));
+      this.groupsSubject.next(groups);
+    } catch (error) {
+      console.error('Error saving groups', error);
+    }
+  }
+
+  createGroup(name: string, bookmarkIds: string[]): void {
+    const groups = this.groupsSubject.value;
+    const newGroup: BookmarkGroup = {
+      id: uuidv4(),
+      name,
+      bookmarks: bookmarkIds
+    };
+    
+    this.saveGroups([...groups, newGroup]);
+
+    // Update bookmarks with group ID
+    const bookmarks = this.bookmarksSubject.value;
+    bookmarkIds.forEach(id => {
+      this.updateBookmark(id, { groupId: newGroup.id });
+    });
+  }
+
+  getGroups(): Observable<BookmarkGroup[]> {
+    return this.groups$;
+  }
+
+  addToGroup(groupId: string, bookmarkId: string): void {
+    const groups = this.groupsSubject.value;
+    const groupIndex = groups.findIndex(g => g.id === groupId);
+    
+    if (groupIndex !== -1) {
+      const updatedGroup = {
+        ...groups[groupIndex],
+        bookmarks: [...groups[groupIndex].bookmarks, bookmarkId]
+      };
+      
+      const updatedGroups = [
+        ...groups.slice(0, groupIndex),
+        updatedGroup,
+        ...groups.slice(groupIndex + 1)
+      ];
+      
+      this.saveGroups(updatedGroups);
+      this.updateBookmark(bookmarkId, { groupId });
+    }
+  }
+
+  removeFromGroup(groupId: string, bookmarkId: string): void {
+    const groups = this.groupsSubject.value;
+    const groupIndex = groups.findIndex(g => g.id === groupId);
+    
+    if (groupIndex !== -1) {
+      const updatedGroup = {
+        ...groups[groupIndex],
+        bookmarks: groups[groupIndex].bookmarks.filter(id => id !== bookmarkId)
+      };
+      
+      let updatedGroups = [
+        ...groups.slice(0, groupIndex),
+        updatedGroup,
+        ...groups.slice(groupIndex + 1)
+      ];
+      
+      // Remove empty groups
+      if (updatedGroup.bookmarks.length === 0) {
+        updatedGroups = updatedGroups.filter(g => g.id !== groupId);
+      }
+      
+      this.saveGroups(updatedGroups);
+      this.updateBookmark(bookmarkId, { groupId: undefined });
+    }
   }
   
   private loadBookmarks(): void {
@@ -127,6 +226,12 @@ export class BookmarkService {
   deleteBookmark(id: string): void {
     const bookmarks = this.bookmarksSubject.value;
     const filteredBookmarks = bookmarks.filter(b => b.id !== id);
+    
+    // Remove from any groups
+    const bookmark = bookmarks.find(b => b.id === id);
+    if (bookmark?.groupId) {
+      this.removeFromGroup(bookmark.groupId, id);
+    }
     
     this.bookmarksSubject.next(filteredBookmarks);
     this.saveBookmarks(filteredBookmarks);
